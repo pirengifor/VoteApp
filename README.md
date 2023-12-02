@@ -1,7 +1,3 @@
-<!-- install -->
-npm i
-npm install --save-dev @nomicfoundation/hardhat-toolbox
-npm install dotenv
 # Sample Hardhat Project
 
 This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
@@ -9,6 +5,9 @@ This project demonstrates a basic Hardhat use case. It comes with a sample contr
 Try running some of the following tasks:
 
 ```shell
+npm i
+npm install --save-dev @nomicfoundation/hardhat-toolbox
+npm install dotenv
 npx hardhat help
 npx hardhat test
 REPORT_GAS=true npx hardhat test
