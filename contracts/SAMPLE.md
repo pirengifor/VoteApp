@@ -40,7 +40,7 @@ contract Vote {
     su voto aún*/
     modifier onlyUsersNotVotedYet() {
         Voter storage sender = voters[msg.sender];
-        require(!sender.voted, "you already voted");
+        require(!sender.voted, "You already voted");
         _;
     }
 
