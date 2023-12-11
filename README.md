@@ -19,6 +19,8 @@ npx hardhat run scripts/deploy.js
 <<<<<<< HEAD
 // se trabaja con la red de Sepolia
 npx hardhat run scripts/deploy.js --network sepolia
+//PARA CREAR UN NUEVO CONTRATO
+npx hardhat flatten > Flattened.sol 
 =======
 >>>>>>> ef8d48881c0dda3cbd093515e24d2ac1ba9a6d4b
 ```
