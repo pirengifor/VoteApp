@@ -57,7 +57,11 @@ contract Vote {
     // Declarar la variable owner
     address public owner;
     // Contador interno para el ids
-    uint private nextId;
+    uint private nextIdFaculties;
+    uint private nextIdParties;
+    uint private nextIdElections;
+    uint private nextIdCandidates;
+
     /* ---------------------- MODIFICADORES -------------------------------*/
     modifier onlyOwner() {
         require(
@@ -114,6 +118,16 @@ contract Vote {
                 return false;
             }
         }
+        for (uint i = 0; i < faculties.length; i++) {
+            // Compara si el nombre actual en 'parties' es igual al nombre dado
+            if (
+                keccak256(abi.encodePacked(faculties[i].name)) ==
+                keccak256(abi.encodePacked(name))
+            ) {
+                // El nombre ya existe en 'parties'
+                return false;
+            }
+        }
         // El nombre es válido y único en 'parties'
         return true;
     }
@@ -128,13 +142,13 @@ contract Vote {
         ); */
 
         // Agrega una nueva instancia de Election al array
-        elections.push(Election({name: name, idElection: nextId, year: year}));
+        elections.push(Election({name: name, idElection: nextIdElections, year: year}));
 
         // Asigna el nuevo idParty al índice correspondiente
-        electionsIndex[nextId] = elections.length - 1;
+        electionsIndex[nextIdElections] = elections.length - 1;
 
         // Incrementa el contador interno para el próximo idElection
-        nextId++;
+        nextIdElections++;
     }
 
     // Crear Partido
@@ -145,13 +159,13 @@ contract Vote {
         );
 
         // Agrega una nueva instancia de Party al array
-        parties.push(Party({name: name, idParty: nextId}));
+        parties.push(Party({name: name, idParty: nextIdParties}));
 
         // Asigna el nuevo idParty al índice correspondiente
-        partiesIndex[nextId] = parties.length - 1;
+        partiesIndex[nextIdParties] = parties.length - 1;
 
         // Incrementa el contador interno para el próximo idParty
-        nextId++;
+        nextIdParties++;
     }
 
     // Crear Facultad
@@ -162,38 +176,38 @@ contract Vote {
         );
 
         // Agrega una nueva instancia de Faculty al array
-        faculties.push(Faculty({name: name, idFaculty: nextId}));
+        faculties.push(Faculty({name: name, idFaculty: nextIdFaculties}));
 
         // Asigna el nuevo idParty al índice correspondiente
-        facultiesIndex[nextId] = faculties.length - 1;
+        facultiesIndex[nextIdFaculties] = faculties.length - 1;
 
         // Incrementa el contador interno para el próximo idFaculty
-        nextId++;
+        nextIdFaculties++;
     }
 
     // Crear Candidato
     function addCandidate(string memory name) public onlyOwner {
-        require(
+        /* require(
             isIdNombreValidoEUnicoEnParties(name),
             "Nombre del partido no valido o repetido"
-        );
+        ); */
 
         // Agrega una nueva instancia de Candidates al array
         candidates.push(
             Candidate({
                 name: name,
-                idCandidate: nextId,
-                idParty: 0,
-                idFaculty: 0,
+                idCandidate: nextIdCandidates,
+                idParty: nextIdParties,
+                idFaculty: nextIdFaculties,
                 votesCount: 0
             })
         );
 
         // Asigna el nuevo idCandidates al índice correspondiente
-        candidatesIndex[nextId] = candidates.length - 1;
+        candidatesIndex[nextIdCandidates] = candidates.length - 1;
 
         // Incrementa el contador interno para el próximo idCandidates
-        nextId++;
+        nextIdCandidates++;
     }
 
     function Votante(uint32 index) public onlyUsersNotVotedYet {
