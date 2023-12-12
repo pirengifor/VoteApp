@@ -23,7 +23,13 @@ contract Vote {
         uint idParty; // FK_PARTY
         uint idFaculty; //FK_FACULTY
     }
-    
+    struct InfoCandidate {
+        string name;
+        uint idCandidate;
+        Party party;
+        Faculty faculty;
+        uint256 votesCount;
+    }
     struct Voter {
         uint idVoter; // PK
         string name;
@@ -32,27 +38,32 @@ contract Vote {
         uint vote; // índice de la propuesta votada
         uint idFaculty; //FK_FACULTY
     }
-    struct DetailElectionPartyCandidate {
-        uint idDetailElectionPartyCandidate; // PK
-        uint idElection; // FK_ELECTION
-        uint idParty; // FK_PARTY
-        uint idCandidate; // FK_CANDIDATE
-        uint idVoter; // FK_CANDIDATE
-        uint votes; // Cantidad de votos
+    struct InfoVoter {
+        uint idVoter; // PK
+        string name;
+        uint dni;
+        bool voted; // true si esa persona ya ha votado
+        uint vote; // índice de la propuesta votada
+        Faculty faculty; //FK_FACULTY
     }
-    struct Info {
-    string name;
-    uint idCandidate;
-    Party party;
-    Faculty faculty;
-    uint256 votesCount;
-}
+    struct ElectionCandidate {
+        uint idElectionPartyCandidate; // PK
+        uint idElection; // FK_ELECTION
+        uint idCandidate; // FK_CANDIDATE
+    }
+    struct DetalleResultados {
+        uint idElectionPartyCandidate; // PK
+        Election election; // FK_ELECTION
+        InfoCandidate candidate; // FK_CANDIDATE
+    }
+    
     /* ---------------------- ARREGLOS -----------------------------------*/
     Election[] private elections;
     Party[] private parties;
     Faculty[] private faculties;
     Candidate[] private candidates; // Proposal
     Voter[] private voters;
+    ElectionCandidate[] private asignacioneleccions;
     //listaCandidatos[] private lista;
 
     /* ---------------------- MAPEOS -------------------------------------*/
@@ -60,6 +71,7 @@ contract Vote {
     mapping(uint256 => uint256) private partiesIndex; // Mapeo de ID de partidos a ├¡ndices de partidos
     mapping(uint256 => uint256) private facultiesIndex; // Mapeo de nombres de facultades a ├¡ndices de facultades
     mapping(uint256 => uint256) private candidatesIndex; // Mapeo de ID de candidatos a ├¡ndices de candidatos
+    mapping(uint256 => uint256) private eleccionescandidatesIndex;
     mapping(address => Voter) private mapVoters; // Mapeo de direcciones a votantes
 
     /* ------------------ VARIABLES PUBLICAS -----------------------------*/
@@ -70,6 +82,7 @@ contract Vote {
     uint private nextIdParties;
     uint private nextIdElections;
     uint private nextIdCandidates;
+    uint private nextIdElectionPartyCandidate;
     
 
     /* ---------------------- MODIFICADORES -------------------------------*/
@@ -105,10 +118,10 @@ contract Vote {
         bool esNombreValido = false;
         for (uint i = 0; i < nameBytes.length; i++) {
             if (
-                nameBytes[i] != 0x20 &&
-                nameBytes[i] != 0x09 &&
-                nameBytes[i] != 0x0A &&
-                nameBytes[i] != 0x0D
+                nameBytes[i] != 0x20 && //espacio
+                nameBytes[i] != 0x09 && //tab
+                nameBytes[i] != 0x0A && //enter
+                nameBytes[i] != 0x0D    // borrar
             ) {
                 esNombreValido = true;
                 break;
@@ -220,6 +233,30 @@ contract Vote {
         nextIdCandidates++;
     }
 
+    function addElectionPartyCandidate(
+            uint32 indexCandidate,
+            uint32 indexElection) public onlyOwner {
+        /* require(
+            isIdNombreValidoEUnicoEnParties(name),
+            "Nombre del partido no valido o repetido"
+        ); */
+
+        // Agrega una nueva instancia de Candidates al array
+        asignacioneleccions.push(
+            ElectionCandidate({
+                idElectionPartyCandidate:nextIdElectionPartyCandidate,
+                idElection:indexElection, // FK_ELECTIO
+                idCandidate:indexCandidate // FK_PARTY
+            })
+        );
+
+        // Asigna el nuevo ideleccionesCandidates al índice correspondiente
+        eleccionescandidatesIndex[nextIdElectionPartyCandidate] = asignacioneleccions.length - 1;
+
+        // Incrementa el contador interno para el próximo idCandidates
+        nextIdElectionPartyCandidate++;
+    }
+
     function Votante(uint32 index) public onlyUsersNotVotedYet {
         Voter storage sender = mapVoters[msg.sender];
         candidates[index].votesCount += 1;
@@ -265,11 +302,11 @@ contract Vote {
         return faculties.length;
     }
     // Lista de Candidatos
-  function getCandidates() public view returns (Info[] memory) {
-    Info[] memory candidatesWithInfo = new Info[](candidates.length);
+  function getCandidates() public view returns (InfoCandidate[] memory) {
+    InfoCandidate[] memory candidatesWithInfo = new InfoCandidate[](candidates.length);
 
     for (uint i = 0; i < candidates.length; i++) {
-        candidatesWithInfo[i] = Info({
+        candidatesWithInfo[i] = InfoCandidate({
             name: candidates[i].name,
             idCandidate: candidates[i].idCandidate,
             party: Party({
@@ -285,8 +322,40 @@ contract Vote {
     }
 
     return candidatesWithInfo;
-}
+    }
 
+    function getelectionsCandidates() public view returns (DetalleResultados[] memory) {
+    DetalleResultados[] memory electionscandidatesWithInfo = new DetalleResultados[](asignacioneleccions.length);
+
+    for (uint i = 0; i < asignacioneleccions.length; i++) {
+        electionscandidatesWithInfo[i] = DetalleResultados({
+            idElectionPartyCandidate: asignacioneleccions[i].idElectionPartyCandidate,
+            election: Election({
+                idElection: elections[asignacioneleccions[i].idElection].idElection,
+                name: elections[asignacioneleccions[i].idElection].name,
+                year: elections[asignacioneleccions[i].idElection].year
+            }),
+            candidate: InfoCandidate({
+                idCandidate: candidates[asignacioneleccions[i].idCandidate].idCandidate,
+                name: candidates[asignacioneleccions[i].idCandidate].name,
+                party: Party({
+                    idParty: parties[candidates[asignacioneleccions[i].idCandidate].idParty].idParty,
+                    name: parties[candidates[asignacioneleccions[i].idCandidate].idParty].name
+                }),
+                faculty: Faculty({
+                    idFaculty: faculties[candidates[asignacioneleccions[i].idCandidate].idFaculty].idFaculty,
+                    name: faculties[candidates[asignacioneleccions[i].idCandidate].idFaculty].name
+                }),
+                votesCount: candidates[asignacioneleccions[i].idCandidate].votesCount
+            })
+        });
+    }
+
+    return electionscandidatesWithInfo;
+    }
+
+    
+    
     // Cantidad de Candidatos
     function getNumberCandidates() public view returns (uint256) {
         return candidates.length;

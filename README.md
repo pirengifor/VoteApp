@@ -18,4 +18,5 @@ npx hardhat run scripts/deploy.js
 
 // se trabaja con la red de Sepolia
 npx hardhat run scripts/deploy.js --network sepolia
+npx hardhat flatten > Flattened.sol
 
