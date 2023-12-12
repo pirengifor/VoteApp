@@ -23,11 +23,11 @@ contract Vote {
         uint idParty; // FK_PARTY
         uint idFaculty; //FK_FACULTY
     }
+    
     struct Voter {
         uint idVoter; // PK
         string name;
         uint dni;
-        uint256 votesCount;
         bool voted; // true si esa persona ya ha votado
         uint vote; // índice de la propuesta votada
         uint idFaculty; //FK_FACULTY
@@ -37,14 +37,23 @@ contract Vote {
         uint idElection; // FK_ELECTION
         uint idParty; // FK_PARTY
         uint idCandidate; // FK_CANDIDATE
+        uint idVoter; // FK_CANDIDATE
         uint votes; // Cantidad de votos
     }
+    struct Info {
+    string name;
+    uint idCandidate;
+    Party party;
+    Faculty faculty;
+    uint256 votesCount;
+}
     /* ---------------------- ARREGLOS -----------------------------------*/
     Election[] private elections;
     Party[] private parties;
     Faculty[] private faculties;
     Candidate[] private candidates; // Proposal
     Voter[] private voters;
+    //listaCandidatos[] private lista;
 
     /* ---------------------- MAPEOS -------------------------------------*/
     mapping(uint256 => uint256) private electionsIndex; // Mapeo de ID de elecciones a ├¡ndices de elecciones
@@ -61,6 +70,7 @@ contract Vote {
     uint private nextIdParties;
     uint private nextIdElections;
     uint private nextIdCandidates;
+    
 
     /* ---------------------- MODIFICADORES -------------------------------*/
     modifier onlyOwner() {
@@ -186,7 +196,7 @@ contract Vote {
     }
 
     // Crear Candidato
-    function addCandidate(string memory name) public onlyOwner {
+    function addCandidate(string memory name,uint32 indexParty,uint32 indexFaculty) public onlyOwner {
         /* require(
             isIdNombreValidoEUnicoEnParties(name),
             "Nombre del partido no valido o repetido"
@@ -197,8 +207,8 @@ contract Vote {
             Candidate({
                 name: name,
                 idCandidate: nextIdCandidates,
-                idParty: nextIdParties,
-                idFaculty: nextIdFaculties,
+                idParty: indexParty,
+                idFaculty: indexFaculty,
                 votesCount: 0
             })
         );
@@ -255,9 +265,27 @@ contract Vote {
         return faculties.length;
     }
     // Lista de Candidatos
-    function getCandidates() public view returns (Candidate[] memory) {
-        return candidates;
+  function getCandidates() public view returns (Info[] memory) {
+    Info[] memory candidatesWithInfo = new Info[](candidates.length);
+
+    for (uint i = 0; i < candidates.length; i++) {
+        candidatesWithInfo[i] = Info({
+            name: candidates[i].name,
+            idCandidate: candidates[i].idCandidate,
+            party: Party({
+                idParty: parties[candidates[i].idParty].idParty,
+                name: parties[candidates[i].idParty].name
+            }),
+            faculty: Faculty({
+                idFaculty: faculties[candidates[i].idFaculty].idFaculty,
+                name: faculties[candidates[i].idFaculty].name
+            }),
+            votesCount: candidates[i].votesCount
+        });
     }
+
+    return candidatesWithInfo;
+}
 
     // Cantidad de Candidatos
     function getNumberCandidates() public view returns (uint256) {

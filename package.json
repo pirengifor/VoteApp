@@ -6,6 +6,5 @@
   "dependencies": {
     "dotenv": "^16.3.1",
     "hardhat": "^2.19.2"
-
   }
 }
