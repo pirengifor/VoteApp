@@ -6,7 +6,7 @@ contract Vote {
     struct Election {
         uint idElection;
         string name;
-        uint256 year;
+        uint year;
     }
     struct Party {
         uint idParty;
@@ -19,16 +19,17 @@ contract Vote {
     struct Candidate {
         uint idCandidate; // PK
         string name;
-        uint256 votesCount;
+        uint votesCount;
         uint idParty; // FK_PARTY
         uint idFaculty; //FK_FACULTY
     }
     struct InfoCandidate {
-        string name;
         uint idCandidate;
+        string name;
+        uint256 votesCount;
         Party party;
         Faculty faculty;
-        uint256 votesCount;
+        
     }
     struct Voter {
         uint idVoter; // PK
@@ -62,16 +63,17 @@ contract Vote {
     Party[] private parties;
     Faculty[] private faculties;
     Candidate[] private candidates; // Proposal
+    //InfoCandidate[] private infocandidates; // Proposal
     Voter[] private voters;
     ElectionCandidate[] private asignacioneleccions;
     //listaCandidatos[] private lista;
 
     /* ---------------------- MAPEOS -------------------------------------*/
-    mapping(uint256 => uint256) private electionsIndex; // Mapeo de ID de elecciones a ├¡ndices de elecciones
-    mapping(uint256 => uint256) private partiesIndex; // Mapeo de ID de partidos a ├¡ndices de partidos
-    mapping(uint256 => uint256) private facultiesIndex; // Mapeo de nombres de facultades a ├¡ndices de facultades
-    mapping(uint256 => uint256) private candidatesIndex; // Mapeo de ID de candidatos a ├¡ndices de candidatos
-    mapping(uint256 => uint256) private eleccionescandidatesIndex;
+    mapping(uint => uint) private electionsIndex; // Mapeo de ID de elecciones a ├¡ndices de elecciones
+    mapping(uint => uint) private partiesIndex; // Mapeo de ID de partidos a ├¡ndices de partidos
+    mapping(uint => uint) private facultiesIndex; // Mapeo de nombres de facultades a ├¡ndices de facultades
+    mapping(uint => uint) private candidatesIndex; // Mapeo de ID de candidatos a ├¡ndices de candidatos
+    mapping(uint => uint) private eleccionescandidatesIndex;
     mapping(address => Voter) private mapVoters; // Mapeo de direcciones a votantes
 
     /* ------------------ VARIABLES PUBLICAS -----------------------------*/
@@ -96,7 +98,7 @@ contract Vote {
 
     modifier onlyUsersNotVotedYet() {
         Voter storage sender = mapVoters[msg.sender];
-        require(sender.voted, "El votante ya ha votado.");
+        require(!sender.voted, "El votante ya ha votado.");
         _;
     }
 
@@ -209,7 +211,7 @@ contract Vote {
     }
 
     // Crear Candidato
-    function addCandidate(string memory name,uint32 indexParty,uint32 indexFaculty) public onlyOwner {
+    function addCandidate(string memory name,uint indexParty,uint indexFaculty) public onlyOwner {
         /* require(
             isIdNombreValidoEUnicoEnParties(name),
             "Nombre del partido no valido o repetido"
@@ -257,12 +259,18 @@ contract Vote {
         nextIdElectionPartyCandidate++;
     }
 
-    function Votante(uint32 index) public onlyUsersNotVotedYet {
+    function Votante(uint index) public onlyUsersNotVotedYet {
         Voter storage sender = mapVoters[msg.sender];
-        candidates[index].votesCount += 1;
+        candidates[index].votesCount++;
+
+        // Agrega logs para seguimiento
+        emit VotoRegistrado(msg.sender, index);
+
         sender.voted = true;
         sender.vote = index;
     }
+    // Agrega este evento al contrato
+event VotoRegistrado(address indexed votante, uint indexed indiceCandidato);
 
     /* ---------------------------------------------------------------------------- */
     /* TO READ IN THE CONTRACT */
@@ -278,7 +286,7 @@ contract Vote {
     }
 
     // Cantidad de elecciones
-    function getNumberElections() public view returns (uint256) {
+    function getNumberElections() public view returns (uint) {
         return elections.length;
     }
 
@@ -288,7 +296,7 @@ contract Vote {
     }
 
     // Obtener cantidad de Partidos
-    function getNumberParties() public view returns (uint256) {
+    function getNumberParties() public view returns (uint) {
         return parties.length;
     }
 
@@ -298,9 +306,11 @@ contract Vote {
     }
 
     // Cantidad de Facultades
-    function getNumberFaculties() public view returns (uint256) {
+    function getNumberFaculties() public view returns (uint) {
         return faculties.length;
     }
+
+    
     // Lista de Candidatos
   function getCandidates() public view returns (InfoCandidate[] memory) {
     InfoCandidate[] memory candidatesWithInfo = new InfoCandidate[](candidates.length);
@@ -309,6 +319,7 @@ contract Vote {
         candidatesWithInfo[i] = InfoCandidate({
             name: candidates[i].name,
             idCandidate: candidates[i].idCandidate,
+            votesCount: candidates[i].votesCount,
             party: Party({
                 idParty: parties[candidates[i].idParty].idParty,
                 name: parties[candidates[i].idParty].name
@@ -316,8 +327,7 @@ contract Vote {
             faculty: Faculty({
                 idFaculty: faculties[candidates[i].idFaculty].idFaculty,
                 name: faculties[candidates[i].idFaculty].name
-            }),
-            votesCount: candidates[i].votesCount
+            })
         });
     }
 
@@ -357,7 +367,7 @@ contract Vote {
     
     
     // Cantidad de Candidatos
-    function getNumberCandidates() public view returns (uint256) {
+    function getNumberCandidates() public view returns (uint) {
         return candidates.length;
     }
 }
